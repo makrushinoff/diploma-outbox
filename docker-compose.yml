@@ -1,0 +1,168 @@
+version: '3'
+
+services:
+  localstack:
+    container_name: "localstack"
+    image: localstack/localstack
+    networks:
+      - diploma-net
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
+      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
+    environment:
+      - DEBUG=${DEBUG-}
+      - USE_SSL=0
+      - AWS_CBOR_DISABLE=1
+      - PERSISTENCE=${PERSISTENCE-}
+      - LAMBDA_EXECUTOR=${LAMBDA_EXECUTOR-}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEFAULT_REGION=eu-west-1
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR:-./local/localstack}:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./create-aws-resources.sh:/etc/localstack/init/ready.d/init-aws.sh
+  discovery-service-outbox:
+    container_name: "discovery-service-outbox"
+    image: diploma-outbox/discovery-service
+    networks:
+      - diploma-net
+    ports:
+      - "8761:8761"
+    restart: always
+    healthcheck:
+      test: curl http://localhost:8761/actuator/health
+      interval: 10s
+      retries: 5
+      timeout: 2s
+  api-gateway-outbox:
+    container_name: "api-gateway-outbox"
+    image: diploma-outbox/api-gateway
+    networks:
+      - diploma-net
+    ports:
+      - "8765:8765"
+    restart: always
+    depends_on:
+      - discovery-service-outbox
+    healthcheck:
+      test: curl http://localhost:8765/actuator/health
+      interval: 10s
+      retries: 5
+      timeout: 2s
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVICE_DISCOVERY_HOST: http://discovery-service-outbox:8761
+  db:
+    image: "postgres:latest"
+    container_name: "postgresdbOutbox"
+    restart: always
+    networks:
+      - diploma-net
+    environment:
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5556:5432"
+  user-management-outbox:
+    container_name: "user-management-outbox"
+    image: diploma-outbox/user-management
+    networks:
+      - diploma-net
+    ports:
+      - "8082:8082"
+    restart: always
+    depends_on:
+      - discovery-service-outbox
+      - db
+    healthcheck:
+      test: curl http://localhost:8082/actuator/health
+      interval: 10s
+      retries: 5
+      timeout: 2s
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVICE_DISCOVERY_HOST: http://discovery-service-outbox:8761
+      DB_PASSWORD: 1234
+      DB_USER: postgres
+      DB_HOST: jdbc:postgresql://db:5432
+  application-service-outbox:
+    container_name: "application-service-outbox"
+    image: diploma-outbox/application-service
+    networks:
+      - diploma-net
+    ports:
+      - "8081:8081"
+    restart: always
+    depends_on:
+      - discovery-service-outbox
+      - db
+    healthcheck:
+      test: curl http://localhost:8081/actuator/health
+      interval: 10s
+      retries: 5
+      timeout: 2s
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVICE_DISCOVERY_HOST: http://discovery-service-outbox:8761
+      DB_PASSWORD: 1234
+      DB_USER: postgres
+      DB_HOST: jdbc:postgresql://db:5432
+      AWS_ACCESS_KEY: localstack
+      AWS_SECRET_KEY: local
+      AWS_HOST: http://localstack:4566
+  invoice-service-outbox:
+    container_name: "invoice-service-outbox"
+    image: diploma-outbox/invoice-service
+    networks:
+      - diploma-net
+    ports:
+      - "8083:8083"
+    restart: always
+    depends_on:
+      - discovery-service-outbox
+      - db
+    healthcheck:
+      test: curl http://localhost:8083/actuator/health
+      interval: 10s
+      retries: 5
+      timeout: 2s
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVICE_DISCOVERY_HOST: http://discovery-service-outbox:8761
+      DB_PASSWORD: 1234
+      DB_USER: postgres
+      DB_HOST: jdbc:postgresql://db:5432
+      AWS_ACCESS_KEY: localstack
+      AWS_SECRET_KEY: local
+      AWS_HOST: http://localstack:4566
+  notification-service-outbox:
+    container_name: "notification-service-outbox"
+    image: diploma-outbox/notification-service
+    networks:
+      - diploma-net
+    ports:
+      - "8084:8084"
+    restart: always
+    depends_on:
+      - discovery-service-outbox
+      - db
+    healthcheck:
+      test: curl http://localhost:8084/actuator/health
+      interval: 10s
+      retries: 5
+      timeout: 2s
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      SERVICE_DISCOVERY_HOST: http://discovery-service-outbox:8761
+      DB_PASSWORD: 1234
+      DB_USER: postgres
+      DB_HOST: jdbc:postgresql://db:5432
+      AWS_ACCESS_KEY: localstack
+      AWS_SECRET_KEY: local
+      AWS_HOST: http://localstack:4566
+
+
+networks:
+  diploma-net:
+    driver: bridge

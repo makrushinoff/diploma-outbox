@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: notification-service
+  mail:
+    host: email-smtp.eu-west-1.amazonaws.com
+    username: email@diplomasync.com
+    password: bla
+    properties:
+      mail.smtp:
+        port: 25
+        auth: true
+        starttls.enable: true
+        starttls.required: true
+    test-connection: true
+
+auth:
+  secret-key: ${SECRET_KEY}
+
+eureka:
+  client:
+    enabled: true
+    service-url:
+      defaultZone: ${SERVICE_DISCOVERY_HOST}/eureka
+
+sqs:
+  baseUrl: ${AWS_HOST}/000000000000/
+  invoiceCreation.queue: invoice-creation-queue
+  invoiceNotification.queue: invoice-notification-queue
+  invoiceDeletion.queue: invoice-deletion-queue
+
+localstack.host: ${AWS_HOST}
+
+server:
+  port: 8084
+

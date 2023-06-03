@@ -1,0 +1,2 @@
+SERVICE_DISCOVERY_HOST: http://localhost:8761
+AWS_HOST: http://localhost:4566

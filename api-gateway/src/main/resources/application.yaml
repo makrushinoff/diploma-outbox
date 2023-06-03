@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: api-gateway
+eureka:
+  client:
+    enabled: true
+    service-url:
+      defaultZone: ${SERVICE_DISCOVERY_HOST}/eureka
+
+route:
+  service:
+    user: user-management-service
+    application: application-service
+    invoice: invoice-service
+
+server:
+  port: 8765

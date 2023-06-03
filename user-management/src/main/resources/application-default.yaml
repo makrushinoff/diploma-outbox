@@ -1,0 +1,5 @@
+SERVICE_DISCOVERY_HOST: http://localhost:8761
+DB_HOST: jdbc:postgresql://localhost:5556
+DB_PASSWORD: 1234
+DB_USER: postgres
+AWS_HOST: http://192.168.16.3:4566

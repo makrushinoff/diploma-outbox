@@ -1,0 +1,44 @@
+spring:
+  application:
+    name: invoice-service
+  flyway:
+    enabled: true
+    schemas: ${spring.application.name}
+  datasource:
+    url: ${DB_HOST}/postgres
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    hikari:
+      schema: ${spring.application.name}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        default_schema: ${spring.application.name}
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+auth:
+  secret-key: ${SECRET_KEY}
+
+eureka:
+  client:
+    enabled: true
+    service-url:
+      defaultZone: ${SERVICE_DISCOVERY_HOST}/eureka
+
+sqs:
+  baseUrl: ${AWS_HOST}/000000000000/
+  invoiceCreation.queue: invoice-creation-queue
+  invoiceNotification.queue: invoice-notification-queue
+  invoiceDeletion.queue: invoice-deletion-queue
+  applicationDeletion.queue: application-deletion-queue
+
+localstack.host: ${AWS_HOST}
+
+server:
+  port: 8083
